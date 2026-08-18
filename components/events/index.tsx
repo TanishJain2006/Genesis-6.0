@@ -1,109 +1,255 @@
 "use client";
 
-import TicketCard, { TicketData } from "./TicketCard";
+import { useRef } from "react";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
 
-const TICKETS_DATA: TicketData[] = [
-  {
-    id: "1",
-    title: "Faceoff",
-    category: "SPORTS",
-    date: "August 18th, 2026",
-    venue: "B7 Court",
-    price: "₹75 / team",
-    color: "bg-[#ff68a8]", // Pink ticket
-    glowColor: "shadow-pink-500/20 hover:shadow-pink-500/40",
-    barcode: "/barcode.png",
-  },
-  {
-    id: "2",
-    title: "ZeroTrace",
-    category: "WORKSHOP",
-    date: "August 19th, 2026",
-    venue: "307 AB 1",
-    price: "Registration Required",
-    color: "bg-[#3cbbf6]", // Blue ticket
-    glowColor: "shadow-blue-500/20 hover:shadow-blue-500/40",
-    barcode: "/barcode.png",
-  },
-  {
-    id: "3",
-    title: "Ballistic",
-    category: "GAMING",
-    date: "August 19th, 2026",
-    venue: "Genesis Chowk",
-    price: "₹100 / game",
-    color: "bg-[#4ade80]", // Green ticket
-    glowColor: "shadow-emerald-500/20 hover:shadow-emerald-500/40",
-    barcode: "/barcode.png",
-  },
-  {
-    id: "4",
-    title: "Recurz",
-    category: "HACKATHON",
-    date: "August 21st, 2026",
-    venue: "LHC Second Floor",
-    price: "₹50 / person",
-    color: "bg-[#fb923c]", // Orange ticket
-    glowColor: "shadow-orange-500/20 hover:shadow-orange-500/40",
-    barcode: "/barcode.png",
-  },
-  {
-    id: "5",
-    title: "Networking with WIE",
-    category: "NETWORKING",
-    date: "August 22nd, 2026",
-    venue: "307, AB1",
-    price: "₹50",
-    color: "bg-[#a78bfa]", // Purple ticket
-    glowColor: "shadow-purple-500/20 hover:shadow-purple-500/40",
-    barcode: "/barcode.png",
-  },
-  {
-    id: "6",
-    title: "Tech Summit",
-    category: "TECH SUMMIT",
-    date: "August 22nd, 2026",
-    venue: "Venue TBA",
-    price: "Registration Required",
-    color: "bg-[#facc15]", // Yellow ticket
-    glowColor: "shadow-yellow-500/20 hover:shadow-yellow-500/40",
-    barcode: "/barcode.png",
-  },
-  {
-    id: "7",
-    title: "Breacout",
-    category: "TREASURE HUNT",
-    date: "August 23rd, 2026",
-    venue: "Old Mess",
-    price: "₹100 / person",
-    color: "bg-[#ff68a8]", // Pink ticket
-    glowColor: "shadow-pink-500/20 hover:shadow-pink-500/40",
-    barcode: "/barcode.png",
-  },
-];
+interface TicketData {
+  id: string;
+  title: string;
+  category: string;
+  date: string;
+  venue: string;
+  price: string;
+  image: string; // Event image URL from Prismic
+  color: string;
+  glowColor: string;
+  barcode: string; // Image path for custom barcode
+}
 
-export default function Events() {
+interface TicketCardProps {
+  ticket: TicketData;
+}
+
+export default function TicketCard({ ticket }: TicketCardProps) {
+  const pillRef = useRef<HTMLSpanElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+
+  // Initialize the pill position using GSAP to avoid React inline style conflicts
+  const { contextSafe } = useGSAP(() => {
+    gsap.set(pillRef.current, { xPercent: -100 });
+  });
+
+  const onButtonMouseEnter = contextSafe(() => {
+    gsap.to(pillRef.current, {
+      xPercent: 0,
+      duration: 0.6,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+
+    gsap.to(textRef.current, {
+      color: "#1a73e8",
+      duration: 0.6,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+  });
+
+  const onButtonMouseLeave = contextSafe(() => {
+    gsap.to(pillRef.current, {
+      xPercent: 100,
+      duration: 0.6,
+      ease: "power2.out",
+      overwrite: "auto",
+      onComplete: () => {
+        gsap.set(pillRef.current, { xPercent: -100 });
+      },
+    });
+
+    gsap.to(textRef.current, {
+      color: "#ffffff",
+      duration: 0.6,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+  });
+
+  // Generates a responsive polygon clipPath with circular notches and scallops
+  const generateClipPath = () => {
+    const numNotches = 12;
+    const w = 100 / numNotches;
+    const bottomPoints: string[] = [];
+
+    for (let i = 0; i < numNotches; i++) {
+      const xStart = 100 - i * w;
+
+      bottomPoints.push(
+        `${xStart}% 100%`,
+        `${xStart - 0.25 * w}% calc(100% - 9px)`,
+        `${xStart - 0.5 * w}% calc(100% - 12px)`,
+        `${xStart - 0.75 * w}% calc(100% - 9px)`
+      );
+    }
+
+    bottomPoints.push(`0% 100%`);
+
+    const points = [
+      "0% 0%",
+      "100% 0%",
+
+      // Right side circular cutout notch
+      "100% 37.5%",
+      "98% 38.2%",
+      "96.5% 39.0%",
+      "95% 40.0%",
+      "96.5% 41.0%",
+      "98% 41.8%",
+      "100% 42.5%",
+
+      // Right bottom corner
+      "100% calc(100% - 12px)",
+
+      // Bottom circular scallops
+      ...bottomPoints,
+
+      // Left bottom corner
+      "0% calc(100% - 12px)",
+
+      // Left side circular cutout notch
+      "0% 42.5%",
+      "2% 41.8%",
+      "3.5% 41.0%",
+      "5% 40.0%",
+      "3.5% 39.0%",
+      "2% 38.2%",
+      "0% 37.5%",
+    ];
+
+    return `polygon(${points.join(", ")})`;
+  };
+
   return (
     <div
-      className="relative min-h-screen w-full flex flex-col items-center pt-36 md:pt-40 pb-24 font-sans text-white overflow-x-hidden bg-transparent"
-    >
-      {/* Decorative Blur Backgrounds */}
-      <div className="gpu-accelerated absolute top-1/4 left-1/10 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="gpu-accelerated absolute bottom-1/4 right-1/10 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[150px] pointer-events-none" />
+      className={`ticket-wrapper group relative flex flex-col h-[520px] w-full max-w-[340px] mx-auto rounded-[3px] ${ticket.color} text-slate-950 shadow-2xl ${ticket.glowColor} cursor-pointer font-google-sans`}
+      style={{
+        clipPath: generateClipPath(),
 
-      {/* Main Title Section */}
-      <div className="text-center relative z-10 mb-28">
-        <h1 className="event-title text-[70px] md:text-[106px] font-bold tracking-tight font-mirava-sans bg-gradient-to-r from-white via-blue-100 to-blue-300 bg-clip-text text-transparent">
-          OUR EVENTS
-        </h1>
+        WebkitMaskImage: `
+          linear-gradient(to bottom, black calc(40% - 2px), transparent calc(40% - 2px)),
+          linear-gradient(to bottom, transparent calc(40% + 2px), black calc(40% + 2px)),
+          repeating-linear-gradient(to right, black 0px, black 28px, transparent 28px, transparent 48px)
+        `,
+
+        WebkitMaskSize: "100% 100%, 100% 100%, 100% 6px",
+        WebkitMaskPosition: "0 0, 0 0, 0 calc(40% - 3px)",
+        WebkitMaskRepeat: "no-repeat, no-repeat, repeat-x",
+
+        maskImage: `
+          linear-gradient(to bottom, black calc(40% - 2px), transparent calc(40% - 2px)),
+          linear-gradient(to bottom, transparent calc(40% + 2px), black calc(40% + 2px)),
+          repeating-linear-gradient(to right, black 0px, black 28px, transparent 28px, transparent 48px)
+        `,
+
+        maskSize: "100% 100%, 100% 100%, 100% 6px",
+        maskPosition: "0 0, 0 0, 0 calc(40% - 3px)",
+        maskRepeat: "no-repeat, no-repeat, repeat-x",
+      }}
+    >
+      {/* Top Section */}
+      <div className="bg-white m-4 p-3 rounded-[2px] flex flex-col justify-between min-h-[160px] shadow-sm">
+        {/* Event Image Holder */}
+        <div className="w-full h-[90px] rounded-[2px] overflow-hidden bg-slate-100">
+          <img
+            src={ticket.image}
+            alt={ticket.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        {/* Genesis + Category + Register */}
+        <div className="flex justify-between items-end mt-3">
+          <div>
+            <div className="font-google-sans text-xl font-black tracking-tight flex items-center gap-1 text-slate-900">
+              <span className="text-blue-600 font-google-sans">&#123;</span>
+              Genesis
+              <span className="text-blue-600 font-google-sans">&#125;</span>
+            </div>
+
+            <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-1">
+              {ticket.category}
+            </div>
+          </div>
+
+          {/* Register Button */}
+          <button
+            onMouseEnter={onButtonMouseEnter}
+            onMouseLeave={onButtonMouseLeave}
+            className="relative inline-flex items-center justify-center overflow-hidden rounded-full bg-[#1a73e8] px-4 py-1.5 text-xs font-bold text-white shadow-sm active:scale-[0.98] transition-transform duration-200 cursor-pointer"
+          >
+            <span
+              ref={pillRef}
+              className="absolute inset-0 bg-white rounded-full pointer-events-none"
+            />
+
+            <span ref={textRef} className="relative z-10">
+              Register
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* Tickets Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl w-full px-6 relative z-10">
-        {TICKETS_DATA.map((ticket) => (
-          <TicketCard key={ticket.id} ticket={ticket} />
-        ))}
+      {/* Spacing for perforation line region */}
+      <div className="h-6 shrink-0" />
+
+      {/* Ticket Details */}
+      <div className="flex flex-col justify-between flex-grow px-7 py-4 font-google-sans">
+        <div className="space-y-4">
+          <div>
+            <div className="text-slate-900/60 text-[11px] uppercase tracking-wider font-bold">
+              Event
+            </div>
+
+            <div className="text-lg font-black text-slate-950 tracking-tight uppercase leading-tight mt-0.5">
+              {ticket.title}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-slate-900/60 text-[11px] uppercase tracking-wider font-bold">
+              Date
+            </div>
+
+            <div className="text-base font-extrabold text-slate-950 mt-0.5">
+              {ticket.date}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-slate-900/60 text-[11px] uppercase tracking-wider font-bold">
+              Venue
+            </div>
+
+            <div className="text-sm font-bold text-slate-900 mt-0.5 line-clamp-1">
+              {ticket.venue}
+            </div>
+          </div>
+        </div>
+
+        {/* Price Tag */}
+        <div className="flex justify-between items-center mt-4">
+          <span className="text-sm font-semibold text-slate-900/60">
+            Price:
+          </span>
+
+          <span className="text-lg font-black tracking-tight text-slate-950">
+            {ticket.price}
+          </span>
+        </div>
+      </div>
+
+      {/* Bottom Section - Barcode */}
+      <div className="bg-white mx-4 mb-6 p-3 rounded-[2px] flex flex-col items-center justify-center shadow-sm relative overflow-hidden">
+        <div className="relative h-10 w-full flex justify-center items-center px-1">
+          <img
+            src={ticket.barcode}
+            alt="Barcode"
+            className="h-full max-w-full object-contain"
+          />
+        </div>
       </div>
     </div>
   );
 }
+
+export type { TicketData };
